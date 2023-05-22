@@ -17,9 +17,6 @@ terraform {
 # Configure AWS provider and creds
 provider "aws" {
   region = "us-east-1"
-  shared_config_files = ["../config.txt"]
-shared_credentials_files = ["../credentials.txt"]
-profile = "default"
 }
 
 # Get the latest Amazon Linux ami id
