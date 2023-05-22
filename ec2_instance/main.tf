@@ -1,12 +1,4 @@
-terraform {
-  backend "s3" {
-    bucket = "lab1-artem-bucket" 
-    key = "terraform.tfstate" 
-    region = "us-east-1" 
-    dynamodb_table = "lab1_table" 
-  } 
-  
-  required_providers {
+ required_providers {
     aws = {
       source = "hashicorp/aws"
       version = "~> 4.0"
