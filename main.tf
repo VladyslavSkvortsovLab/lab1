@@ -1,72 +1,81 @@
 terraform {
-	required_providers {
-		aws = {
-		source = "hashicorp/aws"
-		version = "~> 4.0"
-		}
-	}
+
+required_providers {
+aws = {
+source = "hashicorp/aws"
+version = "~> 4.0"
+}
+}
 }
 
 # Configure AWS provider and creds
 provider "aws" {
-	region = "us-east-1"
-	shared_config_files = ["C:/Users/vlady/.aws/config.txt"]
+region = "us-east-1"
+shared_config_files = ["C:/Users/vlady/.aws/config.txt"]
 shared_credentials_files = ["C:/Users/vlady/.aws/credentials.txt"]
 profile = "default"
-	}
-
-# Creating bucket
-resource "aws_s3_bucket" "website" {
-	bucket = "terraform-vlad-bucket"
-	tags = {
-		Name = "Website"
-		Environment = "Dev"
-	}
 }
 
-resource "aws_s3_bucket_public_access_block" "website" {
-  bucket = aws_s3_bucket.website.id
+# Get the latest Amazon Linux ami id
+data "aws_ami" "amazon_linux" {
+most_recent = true
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-	}
-
-resource "aws_s3_bucket_website_configuration" "website_config" {
-	bucket = aws_s3_bucket.website.id
-	index_document {
-		suffix = "index.html"
-	}
-	error_document {
-		key = "error.html"
-	}
+filter {
+name = "name"
+values = ["amzn2-ami-kernel-5.10-hvm-*-x86_64-gp2"]
 }
 
-resource "aws_s3_bucket_policy" "allow_access" {
-	bucket = aws_s3_bucket.website.id
-	policy = data.aws_iam_policy_document.allow_access.json
+owners = ["amazon"]
+
 }
 
-data "aws_iam_policy_document" "allow_access" {
-	statement {
-		principals {
-			type = "AWS"
-			identifiers = ["*"]
-		}
-		actions = [ "s3:GetObject" ]
-		resources = [ aws_s3_bucket.website.arn,
-		"${aws_s3_bucket.website.arn}/*", ]
-	}
+# Create ec2 instance
+resource "aws_instance" "web" {
+ami = data.aws_ami.amazon_linux.id
+instance_type = "t2.micro"
+key_name = "vockey"
+vpc_security_group_ids = [aws_security_group.web_sg.id]
+tags = {
+"Name" = "New webserver"
 }
 
-resource "aws_s3_object" "indexfile" {
-	bucket = aws_s3_bucket.website.id
-	key = "index.html"
-	source = "./src/index.html"
-	content_type = "text/html"
+user_data = <<-EOF
+#!/bin/bash
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl start httpd
+sudo systemctl enable httpd
+echo "<html><h1>Your webserv works!</h1></html>" > /var/www/html/index.html
+EOF
+}
+
+# Security group
+resource "aws_security_group" "web_sg" {
+name = "Ec2 instance sg"
+
+ingress {
+from_port = 80
+to_port = 80
+protocol = "tcp"
+cidr_blocks = ["37.57.147.112/32"]
+}
+
+ingress {
+from_port = 22
+
+to_port =22
+protocol = "tcp"
+cidr_blocks = ["37.57.147.112/32"]
+}
+
+egress {
+from_port = 0
+to_port = 0
+protocol = "-1"
+cidr_blocks = ["0.0.0.0/0"]
+}
 }
 
 output "website_endpoint" {
-	value = aws_s3_bucket_website_configuration.website_config.website_endpoint
+value = aws_instance.web.public_dns
 }
