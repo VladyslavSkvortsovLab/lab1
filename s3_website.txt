@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
-                git branch: 'main', url: https://github.com/VladyslavSkvortsovLab/lab1''
+                git branch: 'main', url: 'https://github.com/VladyslavSkvortsovLab/lab1'
             }
         }
         
@@ -12,7 +12,7 @@ pipeline {
             steps {
                 echo "Terraform action is --> ${action}"
                 sh '''
-                cd s3_webart
+                cd s3_website
                 ls
                 terraform init
                 terraform plan
