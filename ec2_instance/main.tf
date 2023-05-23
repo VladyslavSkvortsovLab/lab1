@@ -1,4 +1,11 @@
 terraform {
+  backend "s3" {
+    bucket         = "lab1-vlad-bucket"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "LB1_table"
+  }
+}
 required_providers {
     aws = {
       source = "hashicorp/aws"
